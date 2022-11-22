@@ -22,6 +22,7 @@ Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, 
 #define LOGO16_GLCD_WIDTH 16
 
 int HTZ = 1;
+int posAX = 0;
 static const unsigned char PROGMEM logo_GB[] = { // 'gameboy logo', 128x64px
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -199,10 +200,37 @@ void setup()
         display.display();
     }
     display.display();
+
+    for (int i = 0; i < 128; i += 3)
+    {
+        display.clearDisplay();
+
+        display.drawBitmap(posAX + i, 0, logo_GB, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        display.display();
+    }
+    delay(500);
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(63, 32);
+    display.write("JUNIA");
+    display.display();
+    delay(1000);
 }
 
 void loop()
 {
+    // le logo game boy en attendant que l'on rentre une carte
+    display.clearDisplay();
+    display.drawBitmap(0, 0, logo_GB, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+    display.display();
+
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(SCREEN_WIDTH / 16, 0);
+    display.write("Entrez une carte");
+    display.display();
+
     while (numeroCarte == 0)
     {
         /* détection  de la carte entrée */
@@ -235,7 +263,6 @@ void loop()
     display.display();
 
     /* détection du bouton cliqué */
-    /*
     bool BoutonPresse = false;
     while (BoutonPresse == false)
     { // tant que 1 bouton n'est pas pressé on ne sort pas de cette boucle
@@ -248,7 +275,7 @@ void loop()
                 BoutonPresse = true; // un bouton a été pressé, on sort de la boucle
             }
         }
-    }*/
+    }
 
     /* envoie des données à l'ordinateur
     Le big brain move:
@@ -256,10 +283,15 @@ void loop()
     Ainsi si c'est la question B, ca va faire 64 + 2 = 66 égale au caractère ascii 'B'
     */
     Serial.print((char)('@' + numeroCarte));
-    // Serial.println(caractereAEnvoyer + 1); // +1 parce que l'index commence à 0
+    Serial.println(caractereAEnvoyer + 1); // +1 parce que l'index commence à 0
 
-    /* on attend que la carte soit sortit de son boîtier (même code que pour détecter que la carte est entrée, simplement une condition de sortie différente)*/
-    while (numeroCarte != 0)
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextSize(0.5);
+    display.write("information envoyee a l'ordinateur \n");
+    display.write("Veuillez retirer la cartouche...")
+        /* on attend que la carte soit sortit de son boîtier (même code que pour détecter que la carte est entrée, simplement une condition de sortie différente)*/
+        while (numeroCarte != 0)
     {
         numeroCarte = 0;
         for (int i = 0; i < nombrePrise; i++)
