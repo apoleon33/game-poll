@@ -18,26 +18,28 @@
 #define pinPrise4 35
 #define pinPrise8 37
 
-const int pinPrise[nombrePrises] = {6, 7, 8, 9};
 const int pinBoutons[nombreBoutons] = {2, 3, 4, 5};
 const char *listeQuestions[] = {"",
-                                "Votre niveau d`etude?\n 1.Seconde \n 2.Premiere\n 3.Terminal\n 4.Post-Bac",
-                                "Quel est le meilleur creneau pour une JPO?\n 1.Matin \n 2.Apres-midi\n 3.soir",
-                                "Etes vous satisfait \ndes activites?\n 1.Tres satisfait\n 2.satisfait\n 3.Peu satisfait\n 4.pas satisfait",
-                                "Comment avez-vous \ntrouve le service \nfournit par l'equipe ?\n 1.Tres satisfaisant\n 2.satisfaisant\n 3.Peu satisfaisant\n 4.pas satisfaisant",
-                                "Votre genre?\n 1.Femme \n 2.Homme \n 3.Autre",
-                                "Comment avez-vous \ndecouvert la JPO?\n 1.Internet \n 2.Salon/Forum \n 3.proches \n 4.Autre",
-                                "Parlerez-vous de \nJUNIA a votre \nentourage?\n 1.Oui \n 2.Non",
-                                "Que pensez vous des \ninformations?\n 1.peu satisfait\n 2.assez satisfait\n 3.satisfait\n 4. tres satisfait",
-                                "Pourquoi etre venu a notre JPO?\n 1.Chercher des infos\n 2.la vie etudiante\n 3.echanger avec des \n profs/etudiants\n 4.voir les locaux",
-                                "Evaluez votre \nressenti generale\n 1.Tres satisfait\n 2.satisfait\n 3.Peu satisfait\n 4.pas satisfait"};
+                                "Votre niveau d`etude?\n A.Seconde \n B.Premiere\n C.Terminal\n D.Post-Bac",
+                                "Quel est le meilleur creneau pour une JPO?\n A.Matin \n B.Apres-midi\n C.soir",
+                                "Etes vous satisfait \ndes activites?\n A.Tres satisfait\n B.satisfait\n C.Peu satisfait\n D.pas satisfait",
+                                "Comment avez-vous \ntrouve le service \nfournit par l'equipe ?\n A.Tres satisfaisant\n B.satisfaisant\n C.Peu satisfaisant\n D.pas satisfaisant",
+                                "Votre genre?\n A.Femme \n B.Homme \n C.Autre",
+                                "Comment avez-vous \ndecouvert la JPO?\n A.Internet \n B.Salon/Forum \n C.proches \n D.Autre",
+                                "Parlerez-vous de \nJUNIA a votre \nentourage?\n A.Oui \n B.Non",
+                                "Que pensez vous des \ninformations?\n A.peu satisfait\n B.assez satisfait\n C.satisfait\n D.Tres satisfait",
+                                "Pourquoi etre venu a notre JPO?\n A.Chercher des infos\n B.la vie etudiante\n C.echanger avec des \n profs/etudiants\n D.voir les locaux",
+                                "Evaluez votre \nressenti generale\n A.Tres satisfait\n B.satisfait\n C.Peu satisfait\n D.pas satisfait"};
 
-const char *questionSiPostBacCoche = "De quel type d’étude s’agit t’il?\n 1.BTS\n 2.CPGE\n 3.BUT\n 4.Autre";
+const char *questionSiPostBacCoche = "De quel type d`etude s`agit t`il?\n A.BTS\n B.CPGE\n C.BUT\n D.Autre";
 
 int numeroCarte = 0;
 bool boutonPresse = false;
+int numeroBoutonAEnvoyer = 0;
 
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+/* les images */
 static const unsigned char PROGMEM logo_GB[] = { // 'gameboy logo', 128x64px
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -236,6 +238,92 @@ static const unsigned char PROGMEM logo_gamePoll[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+void detecterCarte()
+{
+    /* fonction qui boucle tant qu'une carte n'est pas entrée */
+    numeroCarte = 0;
+    while (numeroCarte == 0)
+    {
+        numeroCarte = 0;
+        numeroCarte += (digitalRead(pinPrise1)) ? 1 : 0;
+        numeroCarte += (digitalRead(pinPrise2)) ? 2 : 0;
+        numeroCarte += (digitalRead(pinPrise4)) ? 4 : 0;
+        numeroCarte += (digitalRead(pinPrise8)) ? 8 : 0;
+
+        /*
+        les lignes du dessus sont l'équivalent de:
+         if (digitalRead(pinPrise1)) {
+            numeroCarte += 1 ;
+         } else {
+            numeroCarte += 0
+         }
+
+         if (digitalRead(pinPrise2)){
+            numeroCarte += 2;
+         } else {
+            numeroCarte += 0;
+         }
+        et ainsi de suite pour les 2 autre pins
+
+        lorsque j'écris:
+            if (digitalRead(pinPrise1)) {}
+        c'est comme si j'écrivais:
+            if (digitalRead(pinPrise1) == 1)
+        c'est sous-entendu
+        */
+        delay(1000);
+    }
+}
+
+void detecterBoutonClique(int nombreDeBoutons)
+{
+    /* fonction qui boucle tant qu'un bouton n'a pas été pressé */
+    boutonPresse = false;
+    while (!boutonPresse)
+    {
+        for (int i = 0; i < nombreDeBoutons; i++)
+        {
+            if (digitalRead(pinBoutons[i]) == 1)
+            {
+                numeroBoutonAEnvoyer = i;
+                boutonPresse = true;
+            }
+        }
+    }
+}
+
+void envoyerVersPc(int numeroDeLaCarte, int numeroDeLaReponse)
+{
+    Serial.print((char)('@' + numeroDeLaCarte));
+    Serial.println(numeroDeLaReponse + 1);
+}
+
+void detecterCarteSortie()
+{
+    while (numeroCarte != 0)
+    {
+        numeroCarte = 0;
+        numeroCarte += (digitalRead(pinPrise1)) ? 1 : 0;
+        numeroCarte += (digitalRead(pinPrise2)) ? 2 : 0;
+        numeroCarte += (digitalRead(pinPrise4)) ? 4 : 0;
+        numeroCarte += (digitalRead(pinPrise8)) ? 8 : 0;
+        delay(1000);
+    }
+}
+
+void damien()
+{ /* carte n°11 */
+    display.clearDisplay();
+    display.drawBitmap(0, 0, image_damien, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+    display.display();
+    delay(5000);
+
+    display.clearDisplay();
+    display.drawBitmap(0, 0, logo_gamePoll, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+    display.display();
+    delay(5000);
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -278,54 +366,37 @@ void loop()
     display.display();
     display.setTextSize(1);
 
-    numeroCarte = 0;
-    while (numeroCarte == 0)
-    {
-        numeroCarte = 0;
-        numeroCarte += (digitalRead(pinPrise1)) ? 1 : 0;
-        numeroCarte += (digitalRead(pinPrise2)) ? 2 : 0;
-        numeroCarte += (digitalRead(pinPrise4)) ? 4 : 0;
-        numeroCarte += (digitalRead(pinPrise8)) ? 8 : 0;
-        delay(1000);
-    }
+    detecterCarte();
 
-    Serial.println(numeroCarte);
-    if (numeroCarte == 11)
-    { /* carte damien */
-        display.clearDisplay();
-        display.drawBitmap(0, 0, image_damien, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
-        display.display();
-        delay(5000);
-
-        display.clearDisplay();
-        display.drawBitmap(0, 0, logo_gamePoll, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
-        display.display();
-        delay(5000);
-    }
-    else
+    if (numeroCarte != 11)
     { /* si c'est pas la carte damien*/
-
         display.setCursor(0, 0);
         display.clearDisplay();
         display.write(listeQuestions[numeroCarte]);
         display.display();
 
-        int numeroBoutonAEnvoyer = 0;
-        boutonPresse = false;
-        while (!boutonPresse)
-        {
-            for (int i = 0; i < nombreBoutons; i++)
-            {
-                if (digitalRead(pinBoutons[i]) == 1)
-                {
-                    numeroBoutonAEnvoyer = i;
-                    boutonPresse = true;
-                }
-            }
+        int nombreDeReponsesPossibles;
+        switch (numeroCarte)
+        { /* pour certaines questions touts les boutons ne sont pas nécessaires */
+        case 2:
+            nombreDeReponsesPossibles = 3;
+            break;
+
+        case 5:
+            nombreDeReponsesPossibles = 2;
+            break;
+
+        case 7:
+            nombreDeReponsesPossibles = 2;
+            break;
+
+        default:
+            nombreDeReponsesPossibles = nombreBoutons;
+            break;
         }
 
-        Serial.print((char)('@' + numeroCarte));
-        Serial.println(numeroBoutonAEnvoyer + 1);
+        detecterBoutonClique(nombreDeReponsesPossibles);
+        envoyerVersPc(numeroCarte, numeroBoutonAEnvoyer);
 
         if ((numeroCarte == 1) && ((numeroBoutonAEnvoyer + 1) == 4))
         { /* Si la personne a répondu "post-bac" à la question 1*/
@@ -334,44 +405,29 @@ void loop()
             display.write(questionSiPostBacCoche);
             display.display();
 
-            int numeroBoutonAEnvoyer = 0;
-            boutonPresse = false;
-            while (!boutonPresse)
-            {
-                for (int i = 0; i < nombreBoutons; i++)
-                {
-                    if (digitalRead(pinBoutons[i]) == 1)
-                    {
-                        numeroBoutonAEnvoyer = i;
-                        boutonPresse = true;
-                    }
-                }
-            }
+            delay(1000); // sinon la personne a toujours le doigt cliqué sur le bouton donc on sort automatiquement de la boucle
 
-            Serial.print('K');
-            Serial.println(numeroBoutonAEnvoyer + 1);
+            detecterBoutonClique(nombreBoutons);
+            envoyerVersPc(11, numeroBoutonAEnvoyer);
         }
+    }
+    else
+    { /* carte damien */
+        damien();
     }
 
     display.clearDisplay();
     display.setCursor(0, 0);
-    display.write("Merci de votre reponse !");
+    display.setTextSize(2);
+    display.write("Merci\nde\nvotre\nreponse !");
     display.display();
     delay(1000);
 
     display.clearDisplay();
     display.setCursor(0, 0);
-    display.setTextSize(2);
+
     display.write(" Veuillez\n retirer\n la\n carte.");
     display.display();
 
-    while (numeroCarte != 0)
-    {
-        numeroCarte = 0;
-        numeroCarte += (digitalRead(pinPrise1)) ? 1 : 0;
-        numeroCarte += (digitalRead(pinPrise2)) ? 2 : 0;
-        numeroCarte += (digitalRead(pinPrise4)) ? 4 : 0;
-        numeroCarte += (digitalRead(pinPrise8)) ? 8 : 0;
-        delay(1000);
-    }
+    detecterCarteSortie();
 }
